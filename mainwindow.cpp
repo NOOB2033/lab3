@@ -4,7 +4,7 @@
 #include <QTreeView>
 #include <QTextEdit>
 #include <QFileSystemModel>
-#include <QItemSelection#include "mainwindow.h"
+#include <QItemSelection>
 #include <QSplitter>
 #include <QListView>
 #include <QTreeView>
