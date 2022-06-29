@@ -1,180 +1,134 @@
 #include "mainwindow.h"
-#include <QSplitter>
-#include <QListView>
-#include <QTreeView>
-#include <QTextEdit>
-#include <QFileSystemModel>
-#include <QItemSelection>
-#include <QSplitter>
-#include <QListView>
-#include <QTreeView>
-#include <QTextEdit>
-#include <QFileSystemModel>
-#include <QItemSelectionModel>
-#include <QVBoxLayout>
-#include <QTableView>
-#include <QHeaderView>
-#include <QStatusBar>
-#include <QDebug>
-#include <QtWidgets/QWidget>
-#include <QtCharts/QChartGlobal>
-#include <QtCharts/QChartView>
-#include <QtCharts/QPieSeries>
-#include <QtCharts/QPieSlice>
-#include <QtCharts/QAbstractBarSeries>
-#include <QtCharts/QPercentBarSeries>
-#include <QtCharts/QStackedBarSeries>
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarSet>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QSplineSeries>
-#include <QtCharts/QScatterSeries>
-#include <QtCharts/QAreaSeries>
-#include <QtCharts/QLegend>
-#include <QtWidgets/QGridLayout>
-#include <QtWidgets/QFormLayout>
-#include <QtWidgets/QComboBox>
-#include <QtWidgets/QSpinBox>
-#include <QtWidgets/QCheckBox>
-#include <QtWidgets/QGroupBox>
-#include <QtWidgets/QLabel>
-#include <QtCore/QTime>
-#include <QtCharts/QBarCategoryAxis>
 
 
+MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
+    setGeometry(100, 100, 1600, 800);
+    setWindowTitle("Диаграмма");
 
-MainWindow::MainWindow(QWidget *parent)
-	: //QWidget(parent)
-	  QMainWindow(parent)
-{
-     themeWidget = new ThemeWidget();
-    //Устанавливаем размер главного окна
-	this->setGeometry(100, 100, 1500, 500);
-	this->setStatusBar(new QStatusBar(this));
-	this->statusBar()->showMessage("Choosen Path: ");
-	QString homePath = QDir::homePath();
-	// Определим  файловой системы:
-	dirModel =  new QFileSystemModel(this);
-	dirModel->setFilter(QDir::NoDotAndDotDot | QDir::AllDirs);
-	dirModel->setRootPath(homePath);
+    chart = new Chart;
+    fileModel = new QFileSystemModel(this);
+    fileModel->setFilter(QDir::NoDotAndDotDot | QDir::Files);
+    fileModel->setRootPath(homePath);
+    tableView = new QTableView;
+    tableView->setModel(fileModel);
+    openButton = new QPushButton ("Открыть папку");
+    printButton = new QPushButton ("Печать графика");
+    checkboxColor = new QCheckBox("Черно-белый");
+    boxType = new QComboBox(); // Выбор типа графика
+    boxType->insertItem(0, QString("BarChart"));
+    boxType->insertItem(1, QString("PieChart"));
 
-	fileModel = new QFileSystemModel(this);
-	fileModel->setFilter(QDir::NoDotAndDotDot | QDir::Files);
+    selectionModel = tableView->selectionModel();
 
-	fileModel->setRootPath(homePath);
-	//Показать как дерево, пользуясь готовым видом:
+    QLabel* checkLabel = new QLabel("Выберите тип диаграммы:");
+    QLabel* tableLabel = new QLabel("Выберите базу данных:");
 
-	treeView = new QTreeView();
-	treeView->setModel(dirModel);
+    QHBoxLayout* buttonLayout = new QHBoxLayout;
+    buttonLayout->addWidget(checkLabel);
+    buttonLayout->addWidget(boxType);
+    buttonLayout->addWidget(checkboxColor);
+    buttonLayout->addWidget(printButton);
 
-	treeView->expandAll();
-	QSplitter *splitter = new QSplitter(parent);
-	tableView = new QTableView;
-	tableView->setModel(fileModel);
-	splitter->addWidget(treeView);
-    //splitter->addWidget(tableView);
+    QVBoxLayout* tableLayout = new QVBoxLayout;
+    tableLayout->addWidget(tableLabel);
+    tableLayout->addWidget(tableView);
+    tableLayout->addWidget(openButton);
 
-//1.Добавление диаграммы
-     QChartView *chartView;
-     QChart *chartBar =  themeWidget->createBarChart(5);
-     chartView = new QChartView(chartBar);
+    QVBoxLayout* chartLayout = new QVBoxLayout;
+    chartLayout->addLayout(buttonLayout);
+    chartLayout->addWidget(&chart->getView());
 
-    //splitter->addWidget(themeWidget);
-    //splitter->addWidget(chartView);
-    splitter->addWidget(chartView);
-	setCentralWidget(splitter);
+    QHBoxLayout* mainLayout = new QHBoxLayout(this);
+    mainLayout->addLayout(tableLayout);
+    mainLayout->addLayout(chartLayout);
 
-    QItemSelectionModel *selectionModel = treeView->selectionModel();
-	QModelIndex rootIx = dirModel->index(0, 0, QModelIndex());//корневой элемент
-
-	QModelIndex indexHomePath = dirModel->index(homePath);
-	QFileInfo fileInfo = dirModel->fileInfo(indexHomePath);
-
-	/* Рассмотрим способы обхода содержимого папок на диске.
-	 * Предлагается вариант решения, которы может быть применен для более сложных задач.
-	 * Итак, если требуется выполнить анализ содержимого папки, то необходимо организовать обход содержимого. Обход выполняем относительно модельного индекса.
-	 * Например:*/
-	if (fileInfo.isDir()) {
-		/*
-		 * Если fileInfo папка то заходим в нее, что бы просмотреть находящиеся в ней файлы.
-		 * Если нужно просмотреть все файлы, включая все вложенные папки, то нужно организовать рекурсивный обход.
-		*/
-		QDir dir  = fileInfo.dir();
-
-		if (dir.cd(fileInfo.fileName())) {
-			/**
-			 * Если зашли в папку, то пройдемся по контейнеру QFileInfoList ,полученного методом entryInfoList,
-			 * */
-
-			foreach (QFileInfo inf, dir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot, QDir::Type)) {
-				qDebug() << inf.fileName() << "---" << inf.size();
-			}
-
-			dir.cdUp();//выходим из папки
-		}
-	}
-
-	QDir dir = fileInfo.dir();
-
-	foreach (QFileInfo inf, dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDir::Type)) {
-
-		qDebug() << inf.fileName() << "---" << inf.size();
-	}
-
-
-	treeView->header()->resizeSection(0, 200);
-	//Выполняем соединения слота и сигнала который вызывается когда осуществляется выбор элемента в TreeView
-	connect(selectionModel, SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
-			this, SLOT(on_selectionChangedSlot(const QItemSelection &, const QItemSelection &)));
-	//Пример организации установки курсора в TreeView относит ельно модельного индекса
-	QItemSelection toggleSelection;
-	QModelIndex topLeft;
-	topLeft = dirModel->index(homePath);
-	dirModel->setRootPath(homePath);
-
-	toggleSelection.select(topLeft, topLeft);
-	selectionModel->select(toggleSelection, QItemSelectionModel::Toggle);
-}
-//Слот для обработки выбора элемента в TreeView
-//выбор осуществляется с помощью курсора
-
-void MainWindow::on_selectionChangedSlot(const QItemSelection &selected, const QItemSelection &deselected)
-{
-	//Q_UNUSED(selected);
-	Q_UNUSED(deselected);
-	QModelIndex index = treeView->selectionModel()->currentIndex();
-	QModelIndexList indexs =  selected.indexes();
-	QString filePath = "";
-
-	// Размещаем инфо в statusbar относительно выделенного модельного индекса
-
-	if (indexs.count() >= 1) {
-		QModelIndex ix =  indexs.constFirst();
-		filePath = dirModel->filePath(ix);
-		this->statusBar()->showMessage("Выбранный путь : " + dirModel->filePath(indexs.constFirst()));
-	}
-
-	//TODO: !!!!!
-	/*
-	Тут простейшая обработка ширины первого столбца относительно длины названия папки.
-	Это для удобства, что бы при выборе папки имя полностью отображалась в  первом столбце.
-	Требуется доработка(переработка).
-	*/
-	int length = 200;
-	int dx = 30;
-
-	if (dirModel->fileName(index).length() * dx > length) {
-		length = length + dirModel->fileName(index).length() * dx;
-		qDebug() << "r = " << index.row() << "c = " << index.column() << dirModel->fileName(index) << dirModel->fileInfo(
-					 index).size();
-
-	}
-
-	treeView->header()->resizeSection(index.column(), length + dirModel->fileName(index).length());
-	tableView->setRootIndex(fileModel->setRootPath(filePath));
+    connections();
 }
 
-MainWindow::~MainWindow()
-{
 
+void MainWindow::connections() {
+    connect(openButton, SIGNAL(clicked()),this,SLOT(directoryChoose()));
+    connect(boxType,SIGNAL(currentTextChanged(const QString&)),this,SLOT(comboboxChange()));
+    connect(checkboxColor, SIGNAL(toggled(bool)), this, SLOT(colorChange()));
+    connect(printButton,SIGNAL(clicked()), this, SLOT(toPDF()));
+    connect(selectionModel,SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),this,SLOT(selectionChange(const QItemSelection &, const QItemSelection &)));
+
+    IOCContainer::instance().RegisterInstance<IchartDrawer, barChartDrawer>();
+}
+
+
+void MainWindow::directoryChoose() {
+    QFileDialog dialog(this);
+    dialog.setFileMode(QFileDialog::Directory);
+    if (dialog.exec()) {
+        homePath = dialog.selectedFiles().first();
+    }
+    tableView->setRootIndex(fileModel->setRootPath(homePath));
+}
+
+
+void MainWindow::comboboxChange() {
+
+    if (boxType->currentText() == "BarChart") {
+        IOCContainer::instance().RegisterInstance<IchartDrawer, barChartDrawer>();
+        chart->updateChart();
+    } else {
+        IOCContainer::instance().RegisterInstance<IchartDrawer, pieChartDrawer>();
+        chart->updateChart();
+    }
+}
+
+
+void MainWindow::colorChange() {
+    chart->changeColor();
+    chart->updateChart();
+}
+
+
+void MainWindow::toPDF() {
+    if (checkPrint) {
+        QFileDialog dialog(this);
+        dialog.setViewMode(QFileDialog::Detail);
+        QString path;
+        if (dialog.exec()) {
+            path = dialog.selectedFiles().first();
+        }
+        QPdfWriter writer(path + ".pdf");
+        writer.setCreator("Creator");
+        writer.setPageSize(QPagedPaintDevice::A4);
+        QPainter painter(&writer);
+        chart->getView().render(&painter);
+        painter.end();
+    } else {
+        QMessageBox messageBox;
+        messageBox.setText("Отсутствует диаграмма чтобы напечатать");
+        messageBox.exec();
+    }
+}
+
+
+void MainWindow::selectionChange(const QItemSelection& selected, const QItemSelection& deselected) {
+    Q_UNUSED(deselected);
+
+    QString path(fileModel->filePath(selected.indexes().constFirst()));
+
+    if (path.endsWith(".sqlite")) {
+        checkPrint = true;
+        IOCContainer::instance().RegisterInstance<IdataReader, SqlLiteReader>();
+        chart->updateData(path);
+        chart->updateChart();
+        return;
+    }
+    if (path.endsWith(".json")) {
+        checkPrint = true;
+        IOCContainer::instance().RegisterInstance<IdataReader, JsonReader>();
+        chart->updateData(path);
+        chart->updateChart();
+        return;
+    }
+
+    checkPrint = false;
+    QMessageBox messageBox;
+    messageBox.setText("Неверный формат");
+    messageBox.exec();
 }

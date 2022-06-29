@@ -16,7 +16,7 @@ find_package(Qt5 COMPONENTS
         Sql
         )
 
-add_executable(lab3 main.cpp mainwindow.cpp mainwindow.h themewidget.cpp themewidget.h IOCContainer.h dataReader.h dataReader.cpp chartDrawer.cpp chartDrawer.h Chart.cpp Chart.h)
+add_executable(lab3 main.cpp IOCContainer.h dataReader.h dataReader.cpp chartDrawer.cpp chartDrawer.h Chart.cpp Chart.h mainwindow.cpp mainwindow.h)
 target_link_libraries(lab3
         Qt5::Core
         Qt5::Gui

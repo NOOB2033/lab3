@@ -2,29 +2,38 @@
 #define MAINWINDOW_H
 
 
-#include <QMainWindow>
-#include <QWidget>
-#include <QFileSystemModel>
-#include <QTreeView>
-#include <QTableView>
-#include "themewidget.h"
+#include "Chart.h"
 
-class MainWindow : public QMainWindow
-{
-	Q_OBJECT
-private slots:
 
-	void on_selectionChangedSlot(const QItemSelection &selected, const QItemSelection &deselected);
-
+class MainWindow : public QWidget {
+Q_OBJECT
 public:
-	MainWindow(QWidget *parent = 0);
-	~MainWindow();
+    MainWindow(QWidget* parent = nullptr);
+    ~MainWindow() = default;
+
+private slots:
+    void directoryChoose();
+    void comboboxChange();
+    void colorChange();
+    void toPDF();
+    void selectionChange(const QItemSelection& selected, const QItemSelection& deselected);
+
 private:
-	QFileSystemModel *fileModel;
-	QFileSystemModel *dirModel;
-	QTreeView *treeView;
-	QTableView *tableView;
-    ThemeWidget *themeWidget;
+    bool checkPrint = false;
+
+    QString homePath = QDir::homePath();
+    Chart* chart = nullptr;
+
+    QFileSystemModel* fileModel = nullptr;
+    QTableView* tableView = nullptr;
+    QPushButton* openButton = nullptr;
+    QPushButton* printButton = nullptr;
+    QCheckBox* checkboxColor = nullptr;
+    QComboBox* boxType = nullptr;
+    QItemSelectionModel* selectionModel = nullptr;
+
+    void connections();
 };
+
 
 #endif // MAINWINDOW_H
