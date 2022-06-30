@@ -1,47 +1,46 @@
 #include "dataReader.h"
 
-
+// Чтение данных файла формата .sqllite
 void SqlLiteReader::readData(const QString& path, DataList& data) {
-    static QSqlDatabase data_base = QSqlDatabase::addDatabase("QSQLITE");
-    data_base.setDatabaseName(path);
-    if (data_base.open()) {
-        data.clear();
-        QSqlQuery query("SELECT TIME, VALUE FROM " + data_base.tables().takeFirst());
-        for (size_t count = 0; query.next() && count < 10; ++count) {
-            QPointF point(count, query.value(1).toDouble());
-            data.push_back(Data(point, query.value(0).toString()));
+    static QSqlDatabase data_base = QSqlDatabase::addDatabase("QSQLITE"); // Объект базы данных
+    data_base.setDatabaseName(path);  // Передаем путь файла
+    if (data_base.open()) { // Если открылась
+        data.clear();       // Очищаем контейнер для новых данных
+        QSqlQuery query("SELECT TIME, VALUE FROM " + data_base.tables().takeFirst()); // Создаем запрос
+        for (size_t count = 0; query.next() && count < 10; ++count) { // Считываем данные в контейнер
+            data.push_back(Data(query.value(1).toDouble(), query.value(0).toString()));
         }
-    } else {
+    } else { // Если не открылась, выдаем сообщение об ошибке
         QMessageBox messageBox;
-        messageBox.setText("нельзя открыть файл");
+        messageBox.setText("Ошибка! Нельзя открыть указанный файл");
         messageBox.exec();
     }
 }
 
-
+// Чтение данных файла формата Json
 void JsonReader::readData(const QString& path, DataList& data) {
-    QFile file(path);
+    QFile file(path); // Создаем файл
 
+    // Пытаемся открыть файл
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QMessageBox messageBox;
-        messageBox.setText("Нельзя открыть файл");
+        messageBox.setText("Ошибка! Нельзя открыть указанный файл");
         messageBox.exec();
     }
 
-    QString string = file.readAll();
-    QJsonDocument json = QJsonDocument::fromJson(string.toUtf8());
+    QString string = file.readAll();                                   // Считываем файл в строку
+    QJsonDocument json = QJsonDocument::fromJson(string.toUtf8()); // Создаем Json файл из строки
 
-    if (!json.isArray()) {
+    if (!json.isArray()) {  // Если файл не представлен в виде массива, выдаем сообщение об ошибке
         QMessageBox messageBox;
-        messageBox.setText("Введите Json как Массив");
+        messageBox.setText("Ошибка! Файл формата Json должен быть представлен как массив");
         messageBox.exec();
     }
-    data.clear();
+    data.clear();  // Очищаем контейнер для новых данных
     size_t count = 0;
-    for (auto value : json.array()) {
+    for (auto value : json.array()) { // Считываем данные в контейнер
         if (value.isObject() && count < 10) {
-            QPointF point(count, value.toObject()["Value"].toDouble());
-            data.push_back(Data(point, value.toObject()["Time"].toString()));
+            data.push_back(Data(value.toObject()["Value"].toDouble(), value.toObject()["Time"].toString()));
             ++count;
         }
     }

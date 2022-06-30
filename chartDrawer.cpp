@@ -10,7 +10,7 @@ void pieChartDrawer::drawChart(const DataList& data, QChartView& view, bool colo
     size_t count = 0;
     for (auto elem : data)
     {
-        series->append(elem.second, elem.first.y());
+        series->append(elem.second, elem.first);
         if (!color) {
             QLinearGradient gradient(0, 0, view.size().width(), view.size().height());
             gradient.setColorAt(0, Qt::black);
@@ -45,7 +45,7 @@ void barChartDrawer::drawChart(const DataList& data, QChartView& view, bool colo
 
             set->setBrush(QBrush(gradient));
         }
-        *set << elem.first.y();
+        *set << elem.first;
         series->append(set);
         ++count;
     }

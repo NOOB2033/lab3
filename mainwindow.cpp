@@ -6,14 +6,18 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
     setWindowTitle("Диаграмма");
 
     chart = new Chart;
+
     fileModel = new QFileSystemModel(this);
     fileModel->setFilter(QDir::NoDotAndDotDot | QDir::Files);
     fileModel->setRootPath(homePath);
+
     tableView = new QTableView;
     tableView->setModel(fileModel);
+
     openButton = new QPushButton ("Открыть папку");
     printButton = new QPushButton ("Печать графика");
     checkboxColor = new QCheckBox("Черно-белый");
+
     boxType = new QComboBox(); // Выбор типа графика
     boxType->insertItem(0, QString("BarChart"));
     boxType->insertItem(1, QString("PieChart"));

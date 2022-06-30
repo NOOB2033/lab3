@@ -5,7 +5,7 @@
 #include <QtCharts>
 
 
-using Data = QPair<QPointF, QString>;
+using Data = QPair<double, QString>;
 using DataList = QList<Data>;
 
 
