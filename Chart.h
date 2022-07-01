@@ -6,21 +6,23 @@
 #include "dataReader.h"
 #include "IOCContainer.h"
 
-
+// Класс для работы с диаграммой
 class Chart {
 public:
     Chart() = default;
     ~Chart() = default;
 
-    QChartView& getView();
-    void changeColor();
+    QChartView& getView(); // Получение представления графика
+    void changeColor();    // Изменение цвета
 
-    void updateData(const QString& path);
-    void updateChart();
+    void updateData(const QString& path); // Обновление данных диаграммы по пути к файлу
+    void updateChart();                   // Обновление диаграммы
 private:
-    QChartView view;
-    DataList data{};
-    bool color = true;
+    // Поля
+    QChartView view;  // Представление
+    DataList data{};  // Данные
+    bool color = true;// Поле, определяющие цвет графика
+    // true - цветной, false - черно-белый
 };
 
 
