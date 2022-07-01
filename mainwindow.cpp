@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 
 
-MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
+MainWindow::MainWindow(QMainWindow* parent) : QMainWindow(parent) {
     setGeometry(100, 100, 1600, 800);
     setWindowTitle("Диаграмма");
 
@@ -11,50 +11,62 @@ MainWindow::MainWindow(QWidget* parent) : QWidget(parent) {
     fileModel->setFilter(QDir::NoDotAndDotDot | QDir::Files);
     fileModel->setRootPath(homePath);
 
+    tableW = new tableWidget(fileModel);
+    chartW = new chartWidget(&chart->getView());
+
+    QSplitter* splitter = new QSplitter;
+    splitter->addWidget(tableW);
+    splitter->addWidget(chartW);
+
+    setCentralWidget(splitter);
+
+    selectionModel = tableW->tableView->selectionModel();
+
+    connections();
+}
+
+
+MainWindow::tableWidget::tableWidget(QFileSystemModel* fileModel, QWidget* parent) : QWidget(parent) {
     tableView = new QTableView;
     tableView->setModel(fileModel);
 
     openButton = new QPushButton ("Открыть папку");
-    printButton = new QPushButton ("Печать графика");
+    QVBoxLayout* table = new QVBoxLayout;
+    table->addWidget(new QLabel("Выберите базу данных:"));
+    table->addWidget(tableView);
+    table->addWidget(openButton);
+
+    setLayout(table);
+}
+
+
+MainWindow::chartWidget::chartWidget(QChartView* view, QWidget* parent) : QWidget(parent) {
+    printButton = new QPushButton("Печать графика");
     checkboxColor = new QCheckBox("Черно-белый");
 
     boxType = new QComboBox(); // Выбор типа графика
     boxType->insertItem(0, QString("BarChart"));
     boxType->insertItem(1, QString("PieChart"));
 
-    selectionModel = tableView->selectionModel();
+    QHBoxLayout* horizontal = new QHBoxLayout;
+    horizontal->addWidget(new QLabel("Выберите тип диаграммы:"));
+    horizontal->addWidget(boxType);
+    horizontal->addWidget(checkboxColor);
+    horizontal->addWidget(printButton);
 
-    QLabel* checkLabel = new QLabel("Выберите тип диаграммы:");
-    QLabel* tableLabel = new QLabel("Выберите базу данных:");
+    QVBoxLayout* vertical = new QVBoxLayout;
+    vertical->addLayout(horizontal);
+    vertical->addWidget(view);
 
-    QHBoxLayout* buttonLayout = new QHBoxLayout;
-    buttonLayout->addWidget(checkLabel);
-    buttonLayout->addWidget(boxType);
-    buttonLayout->addWidget(checkboxColor);
-    buttonLayout->addWidget(printButton);
-
-    QVBoxLayout* tableLayout = new QVBoxLayout;
-    tableLayout->addWidget(tableLabel);
-    tableLayout->addWidget(tableView);
-    tableLayout->addWidget(openButton);
-
-    QVBoxLayout* chartLayout = new QVBoxLayout;
-    chartLayout->addLayout(buttonLayout);
-    chartLayout->addWidget(&chart->getView());
-
-    QHBoxLayout* mainLayout = new QHBoxLayout(this);
-    mainLayout->addLayout(tableLayout);
-    mainLayout->addLayout(chartLayout);
-
-    connections();
+    setLayout(vertical);
 }
 
 
 void MainWindow::connections() {
-    connect(openButton, SIGNAL(clicked()),this,SLOT(directoryChoose()));
-    connect(boxType,SIGNAL(currentTextChanged(const QString&)),this,SLOT(comboboxChange()));
-    connect(checkboxColor, SIGNAL(toggled(bool)), this, SLOT(colorChange()));
-    connect(printButton,SIGNAL(clicked()), this, SLOT(toPDF()));
+    connect(tableW->openButton, SIGNAL(clicked()),this,SLOT(directoryChoose()));
+    connect(chartW->boxType,SIGNAL(currentTextChanged(const QString&)),this,SLOT(comboboxChange()));
+    connect(chartW->checkboxColor, SIGNAL(toggled(bool)), this, SLOT(colorChange()));
+    connect(chartW->printButton,SIGNAL(clicked()), this, SLOT(toPDF()));
     connect(selectionModel,SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),this,SLOT(selectionChange(const QItemSelection &, const QItemSelection &)));
 
     IOCContainer::instance().RegisterInstance<IchartDrawer, barChartDrawer>();
@@ -67,13 +79,13 @@ void MainWindow::directoryChoose() {
     if (dialog.exec()) {
         homePath = dialog.selectedFiles().first();
     }
-    tableView->setRootIndex(fileModel->setRootPath(homePath));
+    tableW->tableView->setRootIndex(fileModel->setRootPath(homePath));
 }
 
 
 void MainWindow::comboboxChange() {
 
-    if (boxType->currentText() == "BarChart") {
+    if (chartW->boxType->currentText() == "BarChart") {
         IOCContainer::instance().RegisterInstance<IchartDrawer, barChartDrawer>();
         chart->updateChart();
     } else {
@@ -116,6 +128,7 @@ void MainWindow::selectionChange(const QItemSelection& selected, const QItemSele
 
     QString path(fileModel->filePath(selected.indexes().constFirst()));
 
+
     if (path.endsWith(".sqlite")) {
         checkPrint = true;
         IOCContainer::instance().RegisterInstance<IdataReader, SqlLiteReader>();
@@ -136,3 +149,61 @@ void MainWindow::selectionChange(const QItemSelection& selected, const QItemSele
     messageBox.setText("Неверный формат");
     messageBox.exec();
 }
+
+
+//tableWidget::tableWidget(QWidget *parent) {
+//    fileModel = new QFileSystemModel(this);
+//    fileModel->setFilter(QDir::NoDotAndDotDot | QDir::Files);
+//    fileModel->setRootPath(homePath);
+//
+//    tableView = new QTableView;
+//    tableView->setModel(fileModel);
+//
+//    openButton = new QPushButton ("Открыть папку");
+//
+//    selectionModel = tableView->selectionModel();
+//
+//    connect(openButton, SIGNAL(clicked()),this,SLOT(directoryChoose()));
+//    connect(selectionModel,SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),this,SLOT(selectionChange(const QItemSelection &, const QItemSelection &)));
+//
+//    QVBoxLayout* tableLayout = new QVBoxLayout;
+//    tableLayout->addWidget(new QLabel("Выберите базу данных:"));
+//    tableLayout->addWidget(tableView);
+//    tableLayout->addWidget(openButton);
+//}
+//
+//
+//void tableWidget::directoryChoose() {
+//    QFileDialog dialog(this);
+//    dialog.setFileMode(QFileDialog::Directory);
+//    if (dialog.exec()) {
+//        homePath = dialog.selectedFiles().first();
+//    }
+//    tableView->setRootIndex(fileModel->setRootPath(homePath));
+//}
+//
+//void tableWidget::selectionChange(const QItemSelection& selected, const QItemSelection& deselected) {
+//    Q_UNUSED(deselected);
+//
+//    QString path(fileModel->filePath(selected.indexes().constFirst()));
+//
+////    if (path.endsWith(".sqlite")) {
+////        checkPrint = true;
+////        IOCContainer::instance().RegisterInstance<IdataReader, SqlLiteReader>();
+////        chart->updateData(path);
+////        chart->updateChart();
+////        return;
+////    }
+////    if (path.endsWith(".json")) {
+////        checkPrint = true;
+////        IOCContainer::instance().RegisterInstance<IdataReader, JsonReader>();
+////        chart->updateData(path);
+////        chart->updateChart();
+////        return;
+////    }
+//
+////    checkPrint = false;
+////    QMessageBox messageBox;
+////    messageBox.setText("Неверный формат");
+////    messageBox.exec();
+//}
