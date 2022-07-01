@@ -65,11 +65,6 @@ public:
         std::function<std::shared_ptr<T>()> functor;
     };
 
-    static IOCContainer& getIOCContainer()
-    {
-        static IOCContainer container;
-        return container;
-    }
     //one typeid per type
     template<typename T>
     static int GetTypeID()
